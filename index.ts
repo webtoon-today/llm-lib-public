@@ -139,12 +139,13 @@ const DEFAULT_CONFIG = {
 const MODEL_DEFAULTS = {
     text: {
         google: 'gemini-2.5-flash',
-        anthropic: 'claude-3-7-sonnet-latest',
+        anthropic: 'claude-haiku-4-5',
+        openai: 'gpt-4o-mini',
         venice: 'venice-uncensored',
         xai: 'grok-4-fast-non-reasoning'
     },
     image: {
-        google: 'gemini-2.0-flash-exp-image-generation',
+        google: 'gemini-2.5-flash-image-preview',
         openai: 'gpt-image-1',
         kling: 'kling-v1-5',
         venice: 'lustify-sdxl',
@@ -152,13 +153,15 @@ const MODEL_DEFAULTS = {
     },
     structured: {
         google: 'gemini-2.5-flash',
-        anthropic: 'claude-3-7-sonnet-latest',
+        anthropic: 'claude-haiku-4-5',
+        openai: 'gpt-4o-mini',
         venice: 'venice-uncensored',
         xai: 'grok-4-fast-non-reasoning'
     },
     vision: {
-        google: 'gemini-2.0-flash',
-        anthropic: 'claude-3-7-sonnet-latest',
+        google: 'gemini-2.5-flash',
+        anthropic: 'claude-sonnet-4-5',
+        openai: 'gpt-4o',
         venice: 'venice-uncensored',
         xai: 'grok-4-fast-non-reasoning'
     }

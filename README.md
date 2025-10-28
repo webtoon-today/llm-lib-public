@@ -15,7 +15,7 @@ A TypeScript library for interacting with multiple AI/LLM providers with automat
 ## Installation
 
 ```bash
-npm install
+npm install https://github.com/webtoon-today/llm-lib-public
 ```
 
 ## Configuration
@@ -39,23 +39,23 @@ GOOGLE_AI_API_KEY=your_google_ai_api_key
 OPENAI_API_KEY=your_openai_api_key
 ```
 
-#### Venice AI (Optional)
+#### Venice AI
 ```bash
 VENICE_API_KEY=your_venice_api_key
 ```
 
-#### xAI (Optional)
+#### xAI
 ```bash
 XAI_API_KEY=your_xai_api_key
 ```
 
-#### Kling AI (Optional)
+#### Kling AI
 ```bash
 KLING_ACCESS_KEY_ID=your_kling_access_key_id
 KLING_ACCESS_KEY_SECRET=your_kling_access_key_secret
 ```
 
-#### Google Vertex AI (Optional)
+#### Google Vertex AI
 ```bash
 VERTEX_AI_CREDENTIALS={"type":"service_account","project_id":"..."}
 VERTEX_AI_PROJECT=your-gcp-project-id
@@ -67,12 +67,12 @@ VERTEX_AI_LOCATION=us-central1  # Optional, defaults to us-central1
 ### Text Generation
 
 ```typescript
-import { generateText } from './index';
+import { generateText } from 'llm-lib-public';
 
 const result = await generateText({
     model: {
-        anthropic: 'claude-3-haiku-20240307',
-        google: 'gemini-1.5-flash'
+        anthropic: 'claude-3-5-haiku-latest',
+        google: 'gemini-2.5-flash'
     },
     system: 'You are a helpful assistant.',
     messages: [
@@ -80,7 +80,41 @@ const result = await generateText({
     ],
     maxToken: 1000,
     temperature: 0.7,
-    fallbackOrder: ['anthropic', 'google']
+    fallbackOrder: ['google', 'anthropic']
+});
+
+console.log(result.text);
+```
+
+### Text Generation with Image Context (Vision)
+
+```typescript
+import { generateText } from 'llm-lib-public';
+import axios from 'axios';
+
+// Download image from URL and convert to base64
+const imageUrl = 'https://example.com/image.jpg';
+const imageResponse = await axios.get(imageUrl, { responseType: 'arraybuffer' });
+const imageBase64 = Buffer.from(imageResponse.data).toString('base64');
+
+const result = await generateText({
+    model: {
+        google: 'gemini-2.5-flash',
+        anthropic: 'claude-sonnet-4-5'
+    },
+    system: 'You are an AI assistant that can analyze images and answer questions about them.',
+    messages: [
+        {
+            role: 'user',
+            content: [
+                { type: 'text', text: 'What do you see in this image? Describe it in detail.' },
+                { type: 'image', image: imageBase64 }
+            ]
+        }
+    ],
+    maxToken: 500,
+    temperature: 0.7,
+    fallbackOrder: ['google', 'anthropic']
 });
 
 console.log(result.text);
@@ -89,17 +123,21 @@ console.log(result.text);
 ### Streaming Text Generation
 
 ```typescript
-import { generateStream } from './index';
+import { generateStream } from 'llm-lib-public';
 
-for await (const chunk of generateStream({
-    model: { anthropic: 'claude-3-haiku-20240307' },
+const stream = generateStream({
+    model: {
+        google: 'gemini-2.5-flash',
+        anthropic: 'claude-sonnet-4-5'
+    },
     system: 'You are a helpful assistant.',
     messages: [
         { role: 'user', content: 'Tell me a story.' }
     ],
-    fallbackOrder: ['anthropic'],
+    fallbackOrder: ['google', 'anthropic'],
     caller: 'my-app'
-})) {
+});
+for await (const chunk of stream) {
     if (chunk.streamStatus === 'streaming') {
         process.stdout.write(chunk.text || '');
     }
@@ -109,21 +147,40 @@ for await (const chunk of generateStream({
 ### Structured Data Generation
 
 ```typescript
-import { generateStructuredData } from './index';
+import { generateStructuredData } from 'llm-lib-public';
 
-interface Person {
+type Person = {
     name: string;
     age: number;
     city: string;
 }
 
 const result = await generateStructuredData<Person>({
-    model: { google: 'gemini-1.5-flash' },
-    system: 'Generate JSON data based on the user request.',
+    model: {
+        google: 'gemini-2.5-flash',
+        anthropic: 'claude-haiku-4-5'
+    },
+    system: `Generate JSON data based on the user request.
+        |RETURN FORMAT: Json object
+        |{
+        |    "name": string,
+        |    "age": number,
+        |    "city": string | undefined // return undefined if it is not given
+        |}
+        |`.replace(/\n +\|/g, '\n'),
     messages: [
+        { role: 'user', content: 'Create a person who lives in Seoul, 25 years old, and is called Mike.' },
+        {
+            role: 'assistant',
+            content: JSON.stringify({
+                "name": "Mike",
+                "age": 25,
+                "city": "Seoul, Republic of Korea"
+            }, undefined, 4),
+        },
         { role: 'user', content: 'Create a person with name John, age 30, city NYC' }
     ],
-    fallbackOrder: ['google']
+    fallbackOrder: ['google', 'anthropic']
 });
 
 console.log(result.data); // { name: "John", age: 30, city: "NYC" }
@@ -132,14 +189,17 @@ console.log(result.data); // { name: "John", age: 30, city: "NYC" }
 ### Image Generation
 
 ```typescript
-import { generateImage } from './index';
+import { generateImage } from 'llm-lib-public';
 
 const result = await generateImage({
-    model: { google: 'gemini-2.0-flash-exp-image-generation' },
+    model: {
+        google: 'gemini-2.5-flash-image-preview',
+        openai: 'gpt-image-1'
+    },
     prompt: 'A beautiful sunset over mountains',
     width: 1024,
     height: 768,
-    fallbackOrder: ['google']
+    fallbackOrder: ['google', 'openai']
 });
 
 console.log(result.imageUrl); // Returns base64 data URL
